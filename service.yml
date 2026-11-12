@@ -12,7 +12,7 @@ labels:
 # Dagster as the webserver and daemon.
 options:
 - version: '1'
-  tag: '1.13.29'
+  tag: '1.13.30'
   default: true
 
 # Dagster's webserver and daemon load the code location over gRPC.
@@ -51,12 +51,14 @@ links:
 settings:
 - name: module
   title: Python module
-  description: The Python module that defines the code location's Definitions, such as app.definitions.
+  description: The Python module that defines the code location's Definitions, 
+    such as app.definitions.
   default: app.definitions
   var: DAGSTER_CODE_MODULE
 - name: location
   title: Location name
-  description: The code location's name in Dagster's UI. It must match the name in the dagster service's workspace.
+  description: The code location's name in Dagster's UI. It must match the name 
+    in the dagster service's workspace.
   default: app
   var: DAGSTER_CODE_LOCATION
 
