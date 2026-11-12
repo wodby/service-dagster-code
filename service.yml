@@ -1,0 +1,170 @@
+name: dagster-code
+type: service
+icon: dagster
+title: Dagster code location
+guidance: GUIDANCE.md
+scalable: false
+
+labels:
+- dagster
+
+# The Dagster versions of the dagster service: the code server must run the same
+# Dagster as the webserver and daemon.
+options:
+- version: '1'
+  tag: '1.13.29'
+  default: true
+
+# Dagster's webserver and daemon load the code location over gRPC.
+endpoints:
+- name: grpc
+  ports:
+  - name: grpc
+    number: 4000
+    protocol: tcp
+    main: true
+    private: true
+
+links:
+# The database of the dagster service: runs started by this code server store
+# their events there.
+- name: postgres
+  title: PostgreSQL
+  required: true
+  env:
+  - name: DAGSTER_PG_HOST
+    value: '{{link.database.host}}'
+  - name: DAGSTER_PG_PORT
+    value: '{{link.database.port}}'
+  - name: DAGSTER_PG_DB
+    value: '{{link.database.db.name}}'
+  - name: DAGSTER_PG_USERNAME
+    value: '{{link.database.user.name}}'
+  - name: DAGSTER_PG_PASSWORD
+    value: '{{link.database.user.password}}'
+    secret: true
+  selectors:
+  - type: db
+    labels:
+    - postgres
+
+settings:
+- name: module
+  title: Python module
+  description: The Python module that defines the code location's Definitions, such as app.definitions.
+  default: app.definitions
+  var: DAGSTER_CODE_MODULE
+- name: location
+  title: Location name
+  description: The code location's name in Dagster's UI. It must match the name in the dagster service's workspace.
+  default: app
+  var: DAGSTER_CODE_LOCATION
+
+build:
+  connect: true
+  dockerfile: Dockerfile
+  boilerplates:
+  - name: vanilla
+    title: Vanilla Dagster project
+    repo: https://github.com/wodby/dagster-boilerplate
+    branch: main
+
+deployment:
+  # Runs started by the code server finish their current step.
+  shutdownGracePeriod: 60s
+
+helm:
+  name: wodby
+  source: oci://registry-1.docker.io/wodby/stateless
+  chart: oci://registry-1.docker.io/wodby/stateless
+  version: 0.4.0
+  valueMappings:
+    replicas: replicaCount
+    nameOverride: nameOverride
+    fullnameOverride: fullnameOverride
+    serviceAccountName: serviceAccount.name
+    serviceAccountCreate: serviceAccount.create
+    strategy: strategy.type
+    minReady: minReadySeconds
+    progressDeadline: progressDeadlineSeconds
+    shutdownGracePeriod: terminationGracePeriodSeconds
+  values:
+  - name: containerName
+    value: dagster-code
+  - name: command
+    value:
+    - dagster
+  - name: args
+    value:
+    - code-server
+    - start
+    - --host
+    - 0.0.0.0
+    - --port
+    - '4000'
+    - --module-name
+    - $(DAGSTER_CODE_MODULE)
+    - --location-name
+    - $(DAGSTER_CODE_LOCATION)
+  - name: containerPorts
+    value:
+    - name: grpc
+      containerPort: 4000
+      protocol: TCP
+  # Loading the code location can take a while with many assets.
+  - name: startupProbe
+    value:
+      exec:
+        command:
+        - dagster
+        - api
+        - grpc-health-check
+        - --port
+        - '4000'
+      failureThreshold: 60
+      periodSeconds: 5
+      timeoutSeconds: 10
+  - name: readinessProbe
+    value:
+      exec:
+        command:
+        - dagster
+        - api
+        - grpc-health-check
+        - --port
+        - '4000'
+      periodSeconds: 20
+      timeoutSeconds: 10
+
+workloads:
+- name: main
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: '{{helm.release}}'
+  kind: deployment
+  primary: true
+  helm:
+    labels: podLabels
+    annotations: podAnnotations
+    volumes: extraVolumes
+  containers:
+  - name: dagster-code
+    image: dagster/dagster-celery-k8s
+    build: true
+    resources:
+      request:
+        cpu: 100
+        memory: 256
+      limit:
+        memory: 2048
+    helm:
+      resources: resources
+      env: envVars
+      mounts: extraVolumeMounts
+      image:
+        repository: image.repository
+        tag: image.tag
+        registry: image.registry
+        pullPolicy: image.pullPolicy
+
+workspace: false
