@@ -2,7 +2,7 @@
 
 A Dagster code location built from the app's repository: a gRPC code server that the
 [dagster](https://github.com/wodby/service-dagster) service's webserver and daemon load. Use them together, as in the
-[buildable Dagster stack](https://github.com/wodby/stack-dagster-buildable).
+[Dagster stack](https://github.com/wodby/stack-dagster).
 
 ## Image
 
@@ -28,7 +28,7 @@ A deployment builds a new image and restarts the code server; Dagster reloads th
 
 ## Runs
 
-The buildable Dagster stack sets the dagster service's run launcher to Dagster's `DefaultRunLauncher`: the daemon
+The Dagster stack sets the dagster service's run launcher to Dagster's `DefaultRunLauncher`: the daemon
 starts each run inside this code server, which has the project's code and packages, instead of in a Kubernetes job.
 Runs and their events are stored in the linked PostgreSQL database. Run outputs that Dagster's default IO manager
 writes to the code server's disk don't survive a restart: configure an IO manager that writes to external storage for

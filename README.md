@@ -27,8 +27,7 @@ built from your Git repository: a gRPC code server that the
 
 Reference `dagster-code` from a Wodby stack together with the Dagster service,
 and list it in the Dagster service's workspace, as the
-[buildable Dagster stack](https://github.com/wodby/stack-dagster-buildable)
-does.
+[Dagster stack](https://github.com/wodby/stack-dagster) does.
 
 ## Maintain a custom version
 
