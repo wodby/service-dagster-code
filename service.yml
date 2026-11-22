@@ -85,7 +85,7 @@ helm:
     fullnameOverride: fullnameOverride
     serviceAccountName: serviceAccount.name
     serviceAccountCreate: serviceAccount.create
-    strategy: strategy.type
+    strategy: strategy
     minReady: minReadySeconds
     progressDeadline: progressDeadlineSeconds
     shutdownGracePeriod: terminationGracePeriodSeconds
